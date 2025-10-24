@@ -8,11 +8,14 @@ import Input from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const [pickupCity, setPickupCity] = useState('');
   const [dropoffCity, setDropoffCity] = useState('');
   const [miles, setMiles] = useState('');
@@ -102,7 +105,21 @@ export default function ProfileScreen() {
           </ThemedText>
         )}
         <View style={{ height: 8 }} />
-        <Button title="Log out" variant="ghost" onPress={logout} />
+        <Button
+          title={loggingOut ? 'Signing out…' : 'Log out'}
+          variant="ghost"
+          onPress={async () => {
+            try {
+              setLoggingOut(true);
+              await logout();
+              router.replace('/login');
+            } finally {
+              setLoggingOut(false);
+            }
+          }}
+          disabled={loggingOut}
+          loading={loggingOut}
+        />
 
         {user?.role === 'customer' && (
           <Card style={styles.card}>

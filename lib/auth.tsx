@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import { Role, User } from '@/lib/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface AuthContextValue {
@@ -60,6 +61,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     const supabase = await getSupabase();
     await supabase.auth.signOut();
+    // Ensure any persisted session-like data is cleared so next login is fresh
+    try {
+      await AsyncStorage.removeItem('supabase-auth');
+      await AsyncStorage.removeItem('cd_session_v1');
+    } catch {}
     setUser(null);
   }, []);
 

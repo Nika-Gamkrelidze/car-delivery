@@ -18,7 +18,7 @@ export const unstable_settings = {
 function RootNavigator() {
   const { user, loading } = useAuth();
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       {loading ? (
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       ) : user ? (

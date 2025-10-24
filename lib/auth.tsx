@@ -6,7 +6,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   signup: (params: { email: string; password: string; name: string; role: Role }) => Promise<void>;
-  login: (params: { email: string; password: string }) => Promise<void>;
+  login: (params: { email: string; password: string; expectedRole?: Role }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -46,10 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newUser);
   }, []);
 
-  const login = useCallback(async (params: { email: string; password: string }) => {
+  const login = useCallback(async (params: { email: string; password: string; expectedRole?: Role }) => {
     const users = await getUsers();
     const u = users.find((x) => x.email.toLowerCase() === params.email.toLowerCase() && x.password === params.password);
     if (!u) throw new Error('Invalid credentials');
+    if (params.expectedRole && u.role !== params.expectedRole) throw new Error(`Account is not a ${params.expectedRole}`);
     await saveSession({ userId: u.id });
     setUser(u);
   }, []);

@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/lib/auth';
-import { generateId, getOrders, saveOrders } from '@/lib/storage';
+import { getOrders, saveOrders } from '@/lib/storage';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -30,20 +30,6 @@ export default function OrdersFeedScreen() {
     await load();
   };
 
-  const seedOrders = async () => {
-    const data = await getOrders();
-    if (data.length > 0) return;
-    const samples: Order[] = [
-      { id: generateId('order'), pickupCity: 'Los Angeles, CA', dropoffCity: 'San Francisco, CA', miles: 383, price: 650, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: generateId('order'), pickupCity: 'Dallas, TX', dropoffCity: 'Houston, TX', miles: 239, price: 400, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: generateId('order'), pickupCity: 'Chicago, IL', dropoffCity: 'Detroit, MI', miles: 283, price: 450, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: generateId('order'), pickupCity: 'Miami, FL', dropoffCity: 'Orlando, FL', miles: 235, price: 380, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: generateId('order'), pickupCity: 'New York, NY', dropoffCity: 'Boston, MA', miles: 215, price: 360, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ];
-    await saveOrders(samples);
-    await load();
-  };
-
   const renderItem = ({ item }: { item: Order }) => {
     return (
       <ThemedView style={styles.card}>
@@ -69,14 +55,7 @@ export default function OrdersFeedScreen() {
         contentContainerStyle={{ paddingVertical: 12 }}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
-        ListEmptyComponent={
-          <View style={{ gap: 8 }}>
-            <ThemedText>No orders yet.</ThemedText>
-            <TouchableOpacity style={styles.button} onPress={seedOrders}>
-              <ThemedText style={styles.buttonText}>Add sample orders</ThemedText>
-            </TouchableOpacity>
-          </View>
-        }
+        ListEmptyComponent={<ThemedText>No orders yet.</ThemedText>}
       />
     </ThemedView>
   );

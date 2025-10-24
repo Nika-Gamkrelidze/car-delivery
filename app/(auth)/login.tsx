@@ -20,7 +20,7 @@ export default function LoginScreen() {
     try {
       setSubmitting(true);
       await login({ email, password });
-      router.replace('/');
+      router.replace('/profile');
     } catch (e: any) {
       Alert.alert('Login failed', e?.message ?? 'Please try again');
     } finally {

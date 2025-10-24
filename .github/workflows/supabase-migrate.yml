@@ -28,4 +28,3 @@ jobs:
           supabase db push --include-roles --yes
 
 
-Fi

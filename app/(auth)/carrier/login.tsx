@@ -20,7 +20,7 @@ export default function CarrierLoginScreen() {
     try {
       setSubmitting(true);
       await login({ email, password, expectedRole: 'carrier' });
-      router.replace('/');
+      router.replace('/profile');
     } catch (e: any) {
       Alert.alert('Login failed', e?.message ?? 'Please try again');
     } finally {

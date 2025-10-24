@@ -21,7 +21,7 @@ export default function CustomerSignupScreen() {
     try {
       setSubmitting(true);
       await signup({ email, password, name, role: 'customer' });
-      router.replace('/');
+      router.replace('/profile');
     } catch (e: any) {
       Alert.alert('Sign up failed', e?.message ?? 'Please try again');
     } finally {

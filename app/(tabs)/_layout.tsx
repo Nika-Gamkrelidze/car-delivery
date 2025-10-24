@@ -1,5 +1,6 @@
-import { Tabs } from 'expo-router';
+import { Slot, Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -7,6 +8,10 @@ import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
   const colorScheme = 'light';
+
+  if (Platform.OS === 'web') {
+    return <Slot />;
+  }
 
   return (
     <Tabs

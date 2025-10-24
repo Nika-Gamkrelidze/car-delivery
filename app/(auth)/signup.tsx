@@ -22,7 +22,7 @@ export default function SignupScreen() {
     try {
       setSubmitting(true);
       await signup({ email, password, name, role });
-      router.replace('/');
+      router.replace('/profile');
     } catch (e: any) {
       Alert.alert('Sign up failed', e?.message ?? 'Please try again');
     } finally {

@@ -21,7 +21,7 @@ export default function CarrierSignupScreen() {
     try {
       setSubmitting(true);
       await signup({ email, password, name, role: 'carrier' });
-      router.replace('/');
+      router.replace('/profile');
     } catch (e: any) {
       Alert.alert('Sign up failed', e?.message ?? 'Please try again');
     } finally {

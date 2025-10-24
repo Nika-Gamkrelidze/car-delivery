@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const supabase = await getSupabase();
       const { data: authListener } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (session?.user) {
-        fetchProfile(session.user.id).then(setUser).finally(() => setLoading(false));
+          ensureProfile(session.user).then(setUser).finally(() => setLoading(false));
       } else {
         setUser(null);
         setLoading(false);
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsub = () => authListener.subscription.unsubscribe();
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
-        await fetchProfile(data.session.user.id).then(setUser);
+        await ensureProfile(data.session.user).then(setUser);
       }
       setLoading(false);
     })();
@@ -40,14 +40,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = useCallback(async (params: { email: string; password: string; name: string; role: Role }) => {
     const supabase = await getSupabase();
-    const { data, error } = await supabase.auth.signUp({ email: params.email, password: params.password });
+    const { data, error } = await supabase.auth.signUp({ email: params.email, password: params.password, options: { data: { name: params.name, role: params.role } } });
     if (error) throw error;
-    const authUser = data.user;
-    if (!authUser) throw new Error('No user returned');
-    const profile: User = { id: authUser.id, email: params.email.trim(), password: '***', name: params.name.trim(), role: params.role, createdAt: new Date().toISOString() };
-    const { error: upsertErr } = await (await getSupabase()).from('profiles').upsert({ id: profile.id, email: profile.email, name: profile.name, role: profile.role, created_at: profile.createdAt });
-    if (upsertErr) throw upsertErr;
-    setUser(profile);
+    // Profile will be created on first authenticated session by ensureProfile
   }, []);
 
   const login = useCallback(async (params: { email: string; password: string; expectedRole?: Role }) => {
@@ -56,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
     const authUser = data.user;
     if (!authUser) throw new Error('Invalid credentials');
-    const profile = await fetchProfile(authUser.id);
+    const profile = await ensureProfile(authUser);
     if (!profile) throw new Error('Profile not found');
     if (params.expectedRole && profile.role !== params.expectedRole) throw new Error(`Account is not a ${params.expectedRole}`);
     setUser(profile);
@@ -79,10 +74,19 @@ export function useAuth(): AuthContextValue {
   return ctx;
 }
 
-async function fetchProfile(id: string): Promise<User | null> {
-  const { data, error } = await (await getSupabase()).from('profiles').select('id, email, name, role, created_at').eq('id', id).single();
-  if (error) return null;
-  return { id: data.id, email: data.email, name: data.name, role: data.role as Role, createdAt: data.created_at, password: '***' };
+async function ensureProfile(authUser: any): Promise<User | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase.from('profiles').select('id, email, name, role, created_at').eq('id', authUser.id).maybeSingle();
+  if (data) {
+    return { id: data.id, email: data.email, name: data.name, role: data.role as Role, createdAt: data.created_at, password: '***' };
+  }
+  // If not found, create using user metadata
+  const name = authUser.user_metadata?.name ?? authUser.email?.split('@')[0] ?? 'User';
+  const role = (authUser.user_metadata?.role as Role) ?? 'customer';
+  const insert = { id: authUser.id, email: authUser.email, name, role, created_at: new Date().toISOString() };
+  const { error: upsertErr } = await supabase.from('profiles').insert(insert);
+  if (upsertErr) return null;
+  return { id: insert.id, email: insert.email, name: insert.name, role: insert.role as Role, createdAt: insert.created_at, password: '***' };
 }
 
 

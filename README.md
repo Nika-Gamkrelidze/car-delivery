@@ -10,7 +10,22 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Environment variables
+
+Create a `.env` file at the repo root:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=your-project-url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+Do NOT include server secrets like `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, or `POSTGRES_*` in the client app.
+
+3. Create the database schema
+
+Open the Supabase SQL Editor and run the SQL from `supabase/migrations/0001_init.sql`.
+
+4. Start the app
 
    ```bash
    npx expo start

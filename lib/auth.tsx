@@ -1,4 +1,4 @@
-import { generateId, getSession, getUsers, saveSession, saveUsers } from '@/lib/storage';
+import { getSupabase } from '@/lib/supabase';
 import { Role, User } from '@/lib/types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -17,46 +17,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let unsub: (() => void) | null = null;
     (async () => {
-      const session = await getSession();
-      const users = await getUsers();
-      if (session) {
-        const u = users.find((x) => x.id === session.userId) ?? null;
-        setUser(u);
+      const supabase = await getSupabase();
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      if (session?.user) {
+        fetchProfile(session.user.id).then(setUser).finally(() => setLoading(false));
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+      });
+      unsub = () => authListener.subscription.unsubscribe();
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        await fetchProfile(data.session.user.id).then(setUser);
       }
       setLoading(false);
     })();
+    return () => { if (unsub) unsub(); };
   }, []);
 
   const signup = useCallback(async (params: { email: string; password: string; name: string; role: Role }) => {
-    const users = await getUsers();
-    const exists = users.some((u) => u.email.toLowerCase() === params.email.toLowerCase());
-    if (exists) throw new Error('Email already registered');
-    const newUser: User = {
-      id: generateId('user'),
-      email: params.email.trim(),
-      password: params.password,
-      name: params.name.trim(),
-      role: params.role,
-      createdAt: new Date().toISOString(),
-    };
-    const next = [...users, newUser];
-    await saveUsers(next);
-    await saveSession({ userId: newUser.id });
-    setUser(newUser);
+    const supabase = await getSupabase();
+    const { data, error } = await supabase.auth.signUp({ email: params.email, password: params.password });
+    if (error) throw error;
+    const authUser = data.user;
+    if (!authUser) throw new Error('No user returned');
+    const profile: User = { id: authUser.id, email: params.email.trim(), password: '***', name: params.name.trim(), role: params.role, createdAt: new Date().toISOString() };
+    const { error: upsertErr } = await (await getSupabase()).from('profiles').upsert({ id: profile.id, email: profile.email, name: profile.name, role: profile.role, created_at: profile.createdAt });
+    if (upsertErr) throw upsertErr;
+    setUser(profile);
   }, []);
 
   const login = useCallback(async (params: { email: string; password: string; expectedRole?: Role }) => {
-    const users = await getUsers();
-    const u = users.find((x) => x.email.toLowerCase() === params.email.toLowerCase() && x.password === params.password);
-    if (!u) throw new Error('Invalid credentials');
-    if (params.expectedRole && u.role !== params.expectedRole) throw new Error(`Account is not a ${params.expectedRole}`);
-    await saveSession({ userId: u.id });
-    setUser(u);
+    const supabase = await getSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: params.email, password: params.password });
+    if (error) throw error;
+    const authUser = data.user;
+    if (!authUser) throw new Error('Invalid credentials');
+    const profile = await fetchProfile(authUser.id);
+    if (!profile) throw new Error('Profile not found');
+    if (params.expectedRole && profile.role !== params.expectedRole) throw new Error(`Account is not a ${params.expectedRole}`);
+    setUser(profile);
   }, []);
 
   const logout = useCallback(async () => {
-    await saveSession(null);
+    const supabase = await getSupabase();
+    await supabase.auth.signOut();
     setUser(null);
   }, []);
 
@@ -69,6 +77,12 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
+}
+
+async function fetchProfile(id: string): Promise<User | null> {
+  const { data, error } = await (await getSupabase()).from('profiles').select('id, email, name, role, created_at').eq('id', id).single();
+  if (error) return null;
+  return { id: data.id, email: data.email, name: data.name, role: data.role as Role, createdAt: data.created_at, password: '***' };
 }
 
 

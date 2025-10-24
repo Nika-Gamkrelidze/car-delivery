@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/lib/auth';
-import { generateId, getOrders, saveOrders } from '@/lib/storage';
+import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
@@ -15,8 +15,9 @@ export default function ProfileScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   const load = async () => {
-    const data = await getOrders();
-    setOrders(data);
+    const supabase = await getSupabase();
+    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    setOrders(((data as any[]) ?? []).map(mapOrderFromDb));
   };
 
   useEffect(() => {
@@ -47,20 +48,16 @@ export default function ProfileScreen() {
       Alert.alert('Invalid input', 'Miles and price must be numbers');
       return;
     }
-    const data = await getOrders();
-    const newOrder: Order = {
-      id: generateId('order'),
-      pickupCity: pickupCity.trim(),
-      dropoffCity: dropoffCity.trim(),
+    await (await getSupabase()).from('orders').insert({
+      pickup_city: pickupCity.trim(),
+      dropoff_city: dropoffCity.trim(),
       miles: milesNum,
       price: priceNum,
       status: 'posted',
-      createdByUserId: user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const next = [newOrder, ...data];
-    await saveOrders(next);
+      created_by_user_id: user.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
     setPickupCity('');
     setDropoffCity('');
     setMiles('');
@@ -69,16 +66,12 @@ export default function ProfileScreen() {
   };
 
   const markDelivered = async (orderId: string) => {
-    const data = await getOrders();
-    const next = data.map((o) => (o.id === orderId ? { ...o, status: 'delivered', updatedAt: new Date().toISOString() } : o));
-    await saveOrders(next);
+    await (await getSupabase()).from('orders').update({ status: 'delivered', updated_at: new Date().toISOString() }).eq('id', orderId);
     await load();
   };
 
   const cancelOrder = async (orderId: string) => {
-    const data = await getOrders();
-    const next = data.map((o) => (o.id === orderId ? { ...o, status: 'cancelled', updatedAt: new Date().toISOString() } : o));
-    await saveOrders(next);
+    await (await getSupabase()).from('orders').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', orderId);
     await load();
   };
 
@@ -149,6 +142,21 @@ export default function ProfileScreen() {
       />
     </ThemedView>
   );
+}
+
+function mapOrderFromDb(row: any): Order {
+  return {
+    id: row.id,
+    pickupCity: row.pickup_city,
+    dropoffCity: row.dropoff_city,
+    miles: row.miles,
+    price: row.price,
+    status: row.status,
+    createdByUserId: row.created_by_user_id,
+    acceptedByUserId: row.accepted_by_user_id ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  } as Order;
 }
 
 const styles = StyleSheet.create({

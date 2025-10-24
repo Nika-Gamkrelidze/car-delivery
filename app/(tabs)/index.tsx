@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/lib/auth';
-import { getOrders, saveOrders } from '@/lib/storage';
+import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -13,8 +13,9 @@ export default function OrdersFeedScreen() {
 
   const load = async () => {
     setRefreshing(true);
-    const data = await getOrders();
-    setOrders(data.filter((o) => o.status === 'posted'));
+    const supabase = await getSupabase();
+    const { data } = await supabase.from('orders').select('*').eq('status', 'posted').order('created_at', { ascending: false });
+    setOrders((data as any[] | null)?.map(mapOrderFromDb) ?? []);
     setRefreshing(false);
   };
 
@@ -24,9 +25,7 @@ export default function OrdersFeedScreen() {
 
   const acceptOrder = async (orderId: string) => {
     if (!user || user.role !== 'carrier') return;
-    const data = await getOrders();
-    const next = data.map((o) => (o.id === orderId && o.status === 'posted' ? { ...o, status: 'accepted', acceptedByUserId: user.id, updatedAt: new Date().toISOString() } : o));
-    await saveOrders(next);
+    await (await getSupabase()).from('orders').update({ status: 'accepted', accepted_by_user_id: user.id, updated_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'posted');
     await load();
   };
 
@@ -59,6 +58,21 @@ export default function OrdersFeedScreen() {
       />
     </ThemedView>
   );
+}
+
+function mapOrderFromDb(row: any): Order {
+  return {
+    id: row.id,
+    pickupCity: row.pickup_city,
+    dropoffCity: row.dropoff_city,
+    miles: row.miles,
+    price: row.price,
+    status: row.status,
+    createdByUserId: row.created_by_user_id,
+    acceptedByUserId: row.accepted_by_user_id ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  } as Order;
 }
 
 const styles = StyleSheet.create({

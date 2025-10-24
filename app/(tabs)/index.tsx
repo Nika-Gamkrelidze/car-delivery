@@ -1,98 +1,109 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useAuth } from '@/lib/auth';
+import { generateId, getOrders, saveOrders } from '@/lib/storage';
+import { Order } from '@/lib/types';
+import React, { useEffect, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-export default function HomeScreen() {
+export default function OrdersFeedScreen() {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const load = async () => {
+    setRefreshing(true);
+    const data = await getOrders();
+    setOrders(data.filter((o) => o.status === 'posted'));
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const acceptOrder = async (orderId: string) => {
+    if (!user || user.role !== 'carrier') return;
+    const data = await getOrders();
+    const next = data.map((o) => (o.id === orderId && o.status === 'posted' ? { ...o, status: 'accepted', acceptedByUserId: user.id, updatedAt: new Date().toISOString() } : o));
+    await saveOrders(next);
+    await load();
+  };
+
+  const seedOrders = async () => {
+    const data = await getOrders();
+    if (data.length > 0) return;
+    const samples: Order[] = [
+      { id: generateId('order'), pickupCity: 'Los Angeles, CA', dropoffCity: 'San Francisco, CA', miles: 383, price: 650, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: generateId('order'), pickupCity: 'Dallas, TX', dropoffCity: 'Houston, TX', miles: 239, price: 400, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: generateId('order'), pickupCity: 'Chicago, IL', dropoffCity: 'Detroit, MI', miles: 283, price: 450, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: generateId('order'), pickupCity: 'Miami, FL', dropoffCity: 'Orlando, FL', miles: 235, price: 380, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: generateId('order'), pickupCity: 'New York, NY', dropoffCity: 'Boston, MA', miles: 215, price: 360, status: 'posted', createdByUserId: 'seed_customer', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ];
+    await saveOrders(samples);
+    await load();
+  };
+
+  const renderItem = ({ item }: { item: Order }) => {
+    return (
+      <ThemedView style={styles.card}>
+        <ThemedText type="subtitle">{item.pickupCity} → {item.dropoffCity}</ThemedText>
+        <ThemedText>{item.miles} miles • ${item.price}</ThemedText>
+        <ThemedText>Posted by {item.createdByUserId.slice(0, 6)}</ThemedText>
+        {user?.role === 'carrier' && (
+          <TouchableOpacity style={styles.button} onPress={() => acceptOrder(item.id)}>
+            <ThemedText style={styles.buttonText}>Accept</ThemedText>
+          </TouchableOpacity>
+        )}
+      </ThemedView>
+    );
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">Posted Orders</ThemedText>
+      <FlatList
+        data={orders}
+        keyExtractor={(o) => o.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingVertical: 12 }}
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+        ListEmptyComponent={
+          <View style={{ gap: 8 }}>
+            <ThemedText>No orders yet.</ThemedText>
+            <TouchableOpacity style={styles.button} onPress={seedOrders}>
+              <ThemedText style={styles.buttonText}>Add sample orders</ThemedText>
+            </TouchableOpacity>
+          </View>
+        }
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  card: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: 'white',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  button: {
+    marginTop: 8,
+    backgroundColor: '#10b981',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });

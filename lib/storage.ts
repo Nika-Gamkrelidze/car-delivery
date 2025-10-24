@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const USERS_KEY = 'cd_users_v1';
 const ORDERS_KEY = 'cd_orders_v1';
 const SESSION_KEY = 'cd_session_v1';
+const THEME_KEY = 'cd_theme_pref_v1';
 
 async function getJson<T>(key: string, fallback: T): Promise<T> {
   try {
@@ -45,6 +46,16 @@ export async function saveSession(session: Session | null): Promise<void> {
   } else {
     await setJson(SESSION_KEY, session);
   }
+}
+
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+export async function getThemePreference(): Promise<ThemePreference> {
+  return getJson<ThemePreference>(THEME_KEY, 'system');
+}
+
+export async function saveThemePreference(pref: ThemePreference): Promise<void> {
+  await setJson<ThemePreference>(THEME_KEY, pref);
 }
 
 export function generateId(prefix: string = 'id'): string {

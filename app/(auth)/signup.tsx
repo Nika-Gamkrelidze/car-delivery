@@ -1,9 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import Button from '@/components/ui/button';
+import { Container } from '@/components/ui/container';
+import Input from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const { signup } = useAuth();
@@ -33,34 +36,27 @@ export default function SignupScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
-        <ThemedText type="title">Create account</ThemedText>
-        <TextInput placeholder="Name" style={styles.input} value={name} onChangeText={setName} />
-        <TextInput
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput placeholder="Password" secureTextEntry style={styles.input} value={password} onChangeText={setPassword} />
-        <View style={styles.segmentContainer}>
-          <TouchableOpacity style={[styles.segment, role === 'customer' && styles.segmentActive]} onPress={() => setRole('customer')}>
-            <ThemedText style={[styles.segmentText, role === 'customer' && styles.segmentTextActive]}>Customer</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.segment, role === 'carrier' && styles.segmentActive]} onPress={() => setRole('carrier')}>
-            <ThemedText style={[styles.segmentText, role === 'carrier' && styles.segmentTextActive]}>Carrier</ThemedText>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={submitting}>
-          <ThemedText style={styles.buttonText}>{submitting ? 'Creating…' : 'Create account'}</ThemedText>
-        </TouchableOpacity>
-        <View style={{ height: 12 }} />
-        <Link href="/login" asChild>
-          <TouchableOpacity>
-            <ThemedText type="link">Already have an account? Sign in</ThemedText>
-          </TouchableOpacity>
-        </Link>
+        <Container>
+          <ThemedText type="title">Create account</ThemedText>
+          <Input placeholder="Name" value={name} onChangeText={setName} />
+          <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+          <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <View style={styles.segmentContainer}>
+            <TouchableOpacity style={[styles.segment, role === 'customer' && styles.segmentActive]} onPress={() => setRole('customer')}>
+              <ThemedText style={[styles.segmentText, role === 'customer' && styles.segmentTextActive]}>Customer</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.segment, role === 'carrier' && styles.segmentActive]} onPress={() => setRole('carrier')}>
+              <ThemedText style={[styles.segmentText, role === 'carrier' && styles.segmentTextActive]}>Carrier</ThemedText>
+            </TouchableOpacity>
+          </View>
+          <Button title={submitting ? 'Creating…' : 'Create account'} onPress={onSubmit} disabled={submitting} />
+          <View style={{ height: 12 }} />
+          <Link href="/login" asChild>
+            <TouchableOpacity>
+              <ThemedText type="link">Already have an account? Sign in</ThemedText>
+            </TouchableOpacity>
+          </Link>
+        </Container>
       </ThemedView>
     </KeyboardAvoidingView>
   );
@@ -73,12 +69,7 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-  },
+  input: {},
   segmentContainer: {
     flexDirection: 'row',
     gap: 8,
@@ -103,16 +94,8 @@ const styles = StyleSheet.create({
     color: '#1e40af',
     fontWeight: '700',
   },
-  button: {
-    backgroundColor: '#2563eb',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
+  button: {},
+  buttonText: {},
 });
 
 

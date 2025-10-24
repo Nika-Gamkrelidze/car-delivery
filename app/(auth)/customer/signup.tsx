@@ -1,9 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import Button from '@/components/ui/button';
+import { Container } from '@/components/ui/container';
+import Input from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function CustomerSignupScreen() {
   const { signup } = useAuth();
@@ -32,19 +35,19 @@ export default function CustomerSignupScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
-        <ThemedText type="title">Customer Sign Up</ThemedText>
-        <TextInput placeholder="Name" style={styles.input} value={name} onChangeText={setName} />
-        <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" style={styles.input} value={email} onChangeText={setEmail} />
-        <TextInput placeholder="Password" secureTextEntry style={styles.input} value={password} onChangeText={setPassword} />
-        <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={submitting}>
-          <ThemedText style={styles.buttonText}>{submitting ? 'Creating…' : 'Create account'}</ThemedText>
-        </TouchableOpacity>
-        <View style={{ height: 12 }} />
-        <Link href="/customer/login" asChild>
-          <TouchableOpacity>
-            <ThemedText type="link">Already have an account? Sign in</ThemedText>
-          </TouchableOpacity>
-        </Link>
+        <Container>
+          <ThemedText type="title">Customer Sign Up</ThemedText>
+          <Input placeholder="Name" value={name} onChangeText={setName} />
+          <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+          <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <Button title={submitting ? 'Creating…' : 'Create account'} onPress={onSubmit} disabled={submitting} />
+          <View style={{ height: 12 }} />
+          <Link href="/customer/login" asChild>
+            <TouchableOpacity>
+              <ThemedText type="link">Already have an account? Sign in</ThemedText>
+            </TouchableOpacity>
+          </Link>
+        </Container>
       </ThemedView>
     </KeyboardAvoidingView>
   );
@@ -52,9 +55,9 @@ export default function CustomerSignupScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, gap: 12, justifyContent: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#2563eb', padding: 14, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: 'white', fontWeight: '600' },
+  input: {},
+  button: {},
+  buttonText: {},
 });
 
 

@@ -1,4 +1,4 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -6,10 +6,11 @@ import 'react-native-get-random-values';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 
-import HeaderNav from '@/components/header-nav';
+import { ThemeProviderOverride } from '@/hooks/theme-provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { runMigrations } from '@/lib/migrations';
+import HeaderNav from '../components/header-nav';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -37,14 +38,16 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={DefaultTheme}>
-      <AuthProvider>
-        <Startup>
-          <HeaderGate />
-        </Startup>
-      </AuthProvider>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <ThemeProviderOverride>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AuthProvider>
+          <Startup>
+            <HeaderGate />
+          </Startup>
+        </AuthProvider>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      </ThemeProvider>
+    </ThemeProviderOverride>
   );
 }
 

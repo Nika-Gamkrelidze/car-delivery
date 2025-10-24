@@ -5,9 +5,10 @@ import { Platform } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
-  const colorScheme = 'light';
+  const colorScheme = useColorScheme();
 
   if (Platform.OS === 'web') {
     return <Slot />;
@@ -16,8 +17,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors['light'].tint,
-        headerShown: false,
+        tabBarActiveTintColor: Colors[colorScheme].tint,
+        headerShown: true,
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen

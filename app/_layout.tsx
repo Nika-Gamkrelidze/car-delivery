@@ -1,4 +1,4 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -6,6 +6,7 @@ import 'react-native-get-random-values';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 
+import { ThemeProviderOverride } from '@/hooks/theme-provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { runMigrations } from '@/lib/migrations';
@@ -17,7 +18,7 @@ export const unstable_settings = {
 function RootNavigator() {
   const { user, loading } = useAuth();
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       {loading ? (
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       ) : user ? (
@@ -36,14 +37,16 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={DefaultTheme}>
-      <AuthProvider>
-        <Startup>
-          <RootNavigator />
-        </Startup>
-      </AuthProvider>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <ThemeProviderOverride>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AuthProvider>
+          <Startup>
+            <RootNavigator />
+          </Startup>
+        </AuthProvider>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      </ThemeProvider>
+    </ThemeProviderOverride>
   );
 }
 

@@ -1,10 +1,12 @@
+import OrderCard from '@/components/order-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Container } from '@/components/ui/container';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function OrdersFeedScreen() {
   const { user } = useAuth();
@@ -29,33 +31,24 @@ export default function OrdersFeedScreen() {
     await load();
   };
 
-  const renderItem = ({ item }: { item: Order }) => {
-    return (
-      <ThemedView style={styles.card}>
-        <ThemedText type="subtitle">{item.pickupCity} → {item.dropoffCity}</ThemedText>
-        <ThemedText>{item.miles} miles • ${item.price}</ThemedText>
-        <ThemedText>Posted by {item.createdByUserId.slice(0, 6)}</ThemedText>
-        {user?.role === 'carrier' && (
-          <TouchableOpacity style={styles.button} onPress={() => acceptOrder(item.id)}>
-            <ThemedText style={styles.buttonText}>Accept</ThemedText>
-          </TouchableOpacity>
-        )}
-      </ThemedView>
-    );
-  };
+  const renderItem = ({ item }: { item: Order }) => (
+    <OrderCard order={item} role={user?.role} onAccept={acceptOrder} />
+  );
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Posted Orders</ThemedText>
-      <FlatList
-        data={orders}
-        keyExtractor={(o) => o.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingVertical: 12 }}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
-        ListEmptyComponent={<ThemedText>No orders yet.</ThemedText>}
-      />
+      <Container>
+        <ThemedText type="title">Posted Orders</ThemedText>
+        <ScrollView
+          contentContainerStyle={{ paddingVertical: 12, gap: 8 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}>
+          {orders.length === 0 ? (
+            <ThemedText>No orders yet.</ThemedText>
+          ) : (
+            orders.map((o) => <View key={o.id}>{renderItem({ item: o } as any)}</View>)
+          )}
+        </ScrollView>
+      </Container>
     </ThemedView>
   );
 }
@@ -80,23 +73,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: 'white',
-  },
-  button: {
-    marginTop: 8,
-    backgroundColor: '#10b981',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
+  card: {},
+  button: {},
+  buttonText: {},
 });

@@ -14,15 +14,23 @@ export default function OrdersFeedScreen() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const load = async () => {
+    if (refreshing) return;
     setRefreshing(true);
-    const supabase = await getSupabase();
-    const { data } = await supabase.from('orders').select('*').eq('status', 'posted').order('created_at', { ascending: false });
-    setOrders((data as any[] | null)?.map(mapOrderFromDb) ?? []);
-    setRefreshing(false);
+    try {
+      const supabase = await getSupabase();
+      const { data } = await supabase.from('orders').select('*').eq('status', 'posted').order('created_at', { ascending: false });
+      setOrders((data as any[] | null)?.map(mapOrderFromDb) ?? []);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
     load();
+    const intervalId = setInterval(() => {
+      load();
+    }, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const acceptOrder = async (orderId: string) => {

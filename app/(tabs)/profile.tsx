@@ -8,7 +8,7 @@ import Input from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function ProfileScreen() {
@@ -19,14 +19,26 @@ export default function ProfileScreen() {
   const [price, setPrice] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
 
+  const isFetchingRef = useRef(false);
+
   const load = async () => {
-    const supabase = await getSupabase();
-    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    setOrders(((data as any[]) ?? []).map(mapOrderFromDb));
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const supabase = await getSupabase();
+      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      setOrders(((data as any[]) ?? []).map(mapOrderFromDb));
+    } finally {
+      isFetchingRef.current = false;
+    }
   };
 
   useEffect(() => {
     load();
+    const intervalId = setInterval(() => {
+      load();
+    }, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const myCurrent = useMemo(() => {

@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function OrdersFeedScreen() {
   const { user } = useAuth();
@@ -35,8 +35,24 @@ export default function OrdersFeedScreen() {
 
   const acceptOrder = async (orderId: string) => {
     if (!user || user.role !== 'carrier') return;
-    await (await getSupabase()).from('orders').update({ status: 'accepted', accepted_by_user_id: user.id, updated_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'posted');
-    await load();
+    try {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status: 'accepted', accepted_by_user_id: user.id, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .eq('status', 'posted')
+        .select('id')
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        Alert.alert('Order unavailable', 'This order was already accepted by another carrier.');
+      }
+    } catch (e: any) {
+      Alert.alert('Failed to accept', e?.message ?? 'Please try again.');
+    } finally {
+      await load();
+    }
   };
 
   const renderItem = ({ item }: { item: Order }) => (

@@ -1,17 +1,26 @@
 import { ThemedText } from '@/components/themed-text';
-import { Radius } from '@/constants/theme';
+import { Palette, Radius } from '@/constants/theme';
 import { useThemeOverride } from '@/hooks/theme-provider';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export function ThemeSelector() {
   const { preference, setPreference } = useThemeOverride();
+  
+  const borderColor = useThemeColor({ light: Palette.gray[300], dark: Palette.gray[700] }, 'border');
+  const segmentBg = useThemeColor({ light: '#fff', dark: Palette.gray[800] }, 'surface');
+  const segmentActiveBg = useThemeColor({ light: Palette.blue[50], dark: Palette.blue[900] }, 'surface');
 
   const Item = ({ value, label }: { value: 'system' | 'light' | 'dark'; label: string }) => {
     const active = preference === value;
     return (
       <TouchableOpacity
-        style={[styles.segment, active && styles.segmentActive]}
+        style={[
+          styles.segment,
+          { borderColor, backgroundColor: segmentBg },
+          active && { ...styles.segmentActive, backgroundColor: segmentActiveBg },
+        ]}
         onPress={() => setPreference(value)}
       >
         <ThemedText style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</ThemedText>
@@ -36,14 +45,12 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
     borderRadius: Radius.md,
     alignItems: 'center',
   },
   segmentActive: {
-    borderColor: '#2563eb',
-    backgroundColor: '#dbeafe',
+    borderColor: Palette.blue[600],
   },
   segmentText: {
     fontWeight: '500',

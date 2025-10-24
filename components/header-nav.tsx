@@ -49,7 +49,7 @@ export default function HeaderNav() {
         zIndex: 10,
       }}>
       <Container style={{ paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <ThemedText type="title">Car Delivery</ThemedText>
+        <ThemedText type="title">AutoLink</ThemedText>
         <ThemedView style={{ flexDirection: 'row', gap: 8, padding: 4, borderRadius: Radius.pill, borderWidth: 1, borderColor: border, backgroundColor: groupBg }}>
           <NavLink href="/" label="Orders" />
           <NavLink href="/profile" label="Profile" />

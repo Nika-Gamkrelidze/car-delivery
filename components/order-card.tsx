@@ -12,10 +12,11 @@ export interface OrderCardProps {
   onAccept?: (orderId: string) => void;
   onDeliver?: (orderId: string) => void;
   onCancel?: (orderId: string) => void;
+  onGiveUp?: (orderId: string) => void;
   role?: 'customer' | 'carrier';
 }
 
-export function OrderCard({ order, onAccept, onCancel, onDeliver, role }: OrderCardProps) {
+export function OrderCard({ order, onAccept, onCancel, onDeliver, onGiveUp, role }: OrderCardProps) {
   const statusTone =
     order.status === 'posted'
       ? 'info'
@@ -39,7 +40,11 @@ export function OrderCard({ order, onAccept, onCancel, onDeliver, role }: OrderC
         {order.status === 'accepted' && (
           <>
             <Button title="Delivered" variant="secondary" onPress={() => onDeliver?.(order.id)} />
-            <Button title="Cancel" variant="danger" onPress={() => onCancel?.(order.id)} />
+            {role === 'carrier' ? (
+              <Button title="Give up" variant="danger" onPress={() => onGiveUp?.(order.id)} />
+            ) : (
+              <Button title="Cancel" variant="danger" onPress={() => onCancel?.(order.id)} />
+            )}
           </>
         )}
       </View>

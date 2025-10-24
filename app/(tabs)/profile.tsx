@@ -95,6 +95,29 @@ export default function ProfileScreen() {
     await load();
   };
 
+  const giveUpOrder = async (orderId: string) => {
+    if (!user || user.role !== 'carrier') return;
+    try {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status: 'posted', accepted_by_user_id: null, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .eq('status', 'accepted')
+        .eq('accepted_by_user_id', user.id)
+        .select('id')
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        Alert.alert('Cannot give up', 'Order is no longer assigned to you or status changed.');
+      }
+    } catch (e: any) {
+      Alert.alert('Failed to give up', e?.message ?? 'Please try again.');
+    } finally {
+      await load();
+    }
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
@@ -140,7 +163,13 @@ export default function ProfileScreen() {
         ) : (
           <View style={{ gap: 8 }}>
             {myCurrent.map((item) => (
-              <OrderCard key={item.id} order={item} role={user?.role} onDeliver={markDelivered} onCancel={cancelOrder} />
+              <OrderCard
+                key={item.id}
+                order={item}
+                role={user?.role}
+                onDeliver={markDelivered}
+                {...(user?.role === 'carrier' ? { onGiveUp: giveUpOrder } : { onCancel: cancelOrder })}
+              />
             ))}
           </View>
         )}

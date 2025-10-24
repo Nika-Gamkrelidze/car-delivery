@@ -25,6 +25,6 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.CAR_DELIVERY_SUPABASE_PROJECT_REF }}
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          supabase db push --include-roles --include-secrets
+          supabase db push --include-roles
 
 

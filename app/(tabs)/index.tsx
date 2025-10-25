@@ -7,12 +7,16 @@ import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function OrdersFeedScreen() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selected, setSelected] = useState<Order | null>(null);
+  const surface = useThemeColor({}, 'surface' as any);
+  const textColor = useThemeColor({}, 'text' as any);
+  const borderColor = useThemeColor({}, 'border' as any);
 
   const load = async () => {
     if (refreshing) return;
@@ -82,11 +86,11 @@ export default function OrdersFeedScreen() {
           transparent={true}
           onRequestClose={() => setSelected(null)}>
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={[styles.modalCard, { backgroundColor: surface, borderColor }] }>
               {selected && (
                 <ScrollView contentContainerStyle={{ gap: 8 }}>
-                  <ThemedText type="title">{selected.pickupCity} → {selected.dropoffCity}</ThemedText>
-                  <ThemedText>{selected.miles} miles • ${selected.price}</ThemedText>
+                  <ThemedText type="title" style={{ color: textColor }}>{selected.pickupCity} → {selected.dropoffCity}</ThemedText>
+                  <ThemedText style={{ color: textColor }}>{selected.miles} miles • ${selected.price}</ThemedText>
                   {selected.imageUrl ? (
                     <Image source={{ uri: selected.imageUrl }} style={styles.modalImage} resizeMode="contain" />
                   ) : null}
@@ -99,7 +103,7 @@ export default function OrdersFeedScreen() {
                             <View style={styles.primaryBtn}><ThemedText style={styles.primaryBtnText}>Accept</ThemedText></View>
                           </TouchableOpacity>
                           <TouchableOpacity onPress={() => setSelected(null)}>
-                            <View style={styles.ghostBtn}><ThemedText>Close</ThemedText></View>
+                            <View style={[styles.ghostBtn, { borderColor }]}><ThemedText>Close</ThemedText></View>
                           </TouchableOpacity>
                         </View>
                       </Container>
@@ -107,7 +111,7 @@ export default function OrdersFeedScreen() {
                   )}
                   {!user || user.role !== 'carrier' ? (
                     <TouchableOpacity onPress={() => setSelected(null)}>
-                      <View style={styles.ghostBtn}><ThemedText>Close</ThemedText></View>
+                      <View style={[styles.ghostBtn, { borderColor }]}><ThemedText>Close</ThemedText></View>
                     </TouchableOpacity>
                   ) : null}
                 </ScrollView>
@@ -154,6 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'white',
     padding: 16,
+    borderWidth: 1,
   },
   modalImage: {
     width: '100%',
@@ -174,7 +179,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
   },
   card: {},
   button: {},

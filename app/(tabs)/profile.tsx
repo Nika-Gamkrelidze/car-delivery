@@ -8,6 +8,7 @@ import Input from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
   const [miles, setMiles] = useState('');
   const [price, setPrice] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   const isFetchingRef = useRef(false);
 
@@ -68,6 +70,21 @@ export default function ProfileScreen() {
       Alert.alert('Invalid input', 'Miles and price must be numbers');
       return;
     }
+    let imageUrl: string | undefined = undefined;
+    if (image) {
+      try {
+        const supabase = await getSupabase();
+        const filePath = `${user.id}/${Date.now()}_${image.name}`;
+        const fileResp = await fetch(image.uri);
+        const fileBlob = await fileResp.blob();
+        const { error: uploadErr } = await supabase.storage.from('order-images').upload(filePath, fileBlob, { contentType: image.type, upsert: false });
+        if (uploadErr) throw uploadErr;
+        const { data: pub } = supabase.storage.from('order-images').getPublicUrl(filePath);
+        imageUrl = pub.publicUrl;
+      } catch (e: any) {
+        Alert.alert('Image upload failed', e?.message ?? 'Continuing without image.');
+      }
+    }
     await (await getSupabase()).from('orders').insert({
       pickup_city: pickupCity.trim(),
       dropoff_city: dropoffCity.trim(),
@@ -75,6 +92,7 @@ export default function ProfileScreen() {
       price: priceNum,
       status: 'posted',
       created_by_user_id: user.id,
+      image_url: imageUrl,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -82,7 +100,23 @@ export default function ProfileScreen() {
     setDropoffCity('');
     setMiles('');
     setPrice('');
+    setImage(null);
     await load();
+  };
+
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert('Permission required', 'We need media permissions to pick an image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.8 });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const name = asset.fileName ?? `image_${Date.now()}.jpg`;
+      const type = asset.mimeType ?? 'image/jpeg';
+      setImage({ uri: asset.uri, name, type });
+    }
   };
 
   const markDelivered = async (orderId: string) => {
@@ -151,6 +185,10 @@ export default function ProfileScreen() {
             <Input placeholder="Dropoff city" value={dropoffCity} onChangeText={setDropoffCity} />
             <Input placeholder="Miles" keyboardType="numeric" value={miles} onChangeText={setMiles} />
             <Input placeholder="Price ($)" keyboardType="numeric" value={price} onChangeText={setPrice} />
+            <Button title={image ? 'Change image' : 'Add image'} onPress={pickImage} />
+            {image && (
+              <ThemedText>{image.name}</ThemedText>
+            )}
             <Button title="Post order" onPress={placeOrder} />
           </Card>
         )}
@@ -209,6 +247,7 @@ function mapOrderFromDb(row: any): Order {
     status: row.status,
     createdByUserId: row.created_by_user_id,
     acceptedByUserId: row.accepted_by_user_id ?? undefined,
+    imageUrl: row.image_url ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   } as Order;

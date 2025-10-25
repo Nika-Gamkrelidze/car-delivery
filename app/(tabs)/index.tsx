@@ -87,6 +87,7 @@ function mapOrderFromDb(row: any): Order {
     status: row.status,
     createdByUserId: row.created_by_user_id,
     acceptedByUserId: row.accepted_by_user_id ?? undefined,
+    imageUrl: row.image_url ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   } as Order;

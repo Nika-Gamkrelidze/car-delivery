@@ -20,6 +20,7 @@ export interface Order {
   status: OrderStatus;
   createdByUserId: string;
   acceptedByUserId?: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

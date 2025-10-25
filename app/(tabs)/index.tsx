@@ -2,12 +2,12 @@ import OrderCard from '@/components/order-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Container } from '@/components/ui/container';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function OrdersFeedScreen() {
   const { user } = useAuth();
@@ -68,12 +68,12 @@ export default function OrdersFeedScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Container>
-        <ThemedText type="title">Posted Orders</ThemedText>
+      <Container style={styles.containerInner}>
+        <ThemedText type="title" style={styles.header}>Posted Orders</ThemedText>
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingVertical: 12, gap: 8 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}> 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+          showsVerticalScrollIndicator={false}> 
           {orders.length === 0 ? (
             <ThemedText>No orders yet.</ThemedText>
           ) : (
@@ -143,7 +143,17 @@ function mapOrderFromDb(row: any): Order {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  containerInner: {
+    flex: 1,
+    paddingTop: 16,
+  },
+  header: {
+    marginBottom: 12,
+  },
+  scrollContent: {
+    paddingBottom: 16,
+    gap: 8,
   },
   modalBackdrop: {
     flex: 1,
